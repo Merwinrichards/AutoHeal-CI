@@ -1,0 +1,8 @@
+stages:
+  - build
+
+build-job:
+  stage: build
+  script:
+    - echo "Building..."
+    - invalid_command_here
