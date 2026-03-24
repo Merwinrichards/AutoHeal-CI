@@ -1,0 +1,4 @@
+google-genai>=1.0.0
+PyYAML>=6.0.1
+streamlit>=1.0.0
+streamlit-ace>=0.1.1

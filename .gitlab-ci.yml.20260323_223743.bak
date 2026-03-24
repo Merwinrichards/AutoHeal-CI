@@ -1,0 +1,16 @@
+# Full corrected .gitlab-ci.yml content only - start here
+stages:
+  - build
+
+build:
+  stage: build
+  image: docker:latest # Use a Docker client image for the job
+  services:
+    - docker:dind # Enable Docker-in-Docker service
+  script:
+    - docker version # Verify Docker client and daemon are accessible
+    - docker info # Print Docker system information
+    # Add your actual Docker commands here, e.g.:
+    # - docker build -t my-image:latest .
+    # - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    # - docker push my-image:latest

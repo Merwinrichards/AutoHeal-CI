@@ -1,0 +1,43 @@
+[
+  {
+    "id": "gl-001",
+    "source": "gitlab",
+    "log": "npm ERR! Cannot find module express\nJob failed: exit code 1",
+    "expected_issues": [
+      "Node dependency resolution failed"
+    ]
+  },
+  {
+    "id": "gh-002",
+    "source": "github_actions",
+    "log": "connection refused while calling http://localhost:8080/health\nError: timeout",
+    "expected_issues": [
+      "Service connectivity failure",
+      "Job timeout"
+    ]
+  },
+  {
+    "id": "gl-003",
+    "source": "gitlab",
+    "log": "docker: command not found\nexecutor failed",
+    "expected_issues": [
+      "Docker unavailable"
+    ]
+  },
+  {
+    "id": "so-004",
+    "source": "stackoverflow-pattern",
+    "log": "No space left on device during docker build",
+    "expected_issues": [
+      "Disk exhausted"
+    ]
+  },
+  {
+    "id": "gl-005",
+    "source": "gitlab",
+    "log": "Permission denied: ./deploy.sh",
+    "expected_issues": [
+      "Permission issue"
+    ]
+  }
+]

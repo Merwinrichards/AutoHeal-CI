@@ -1,0 +1,25 @@
+stages:
+  - build
+
+build:
+  stage: build
+  image: docker:latest # Use a Docker-enabled image
+  services:
+    - docker:dind # Run Docker-in-Docker service to provide a Docker daemon
+  variables:
+    DOCKER_HOST: tcp://docker:2375 # Connect to the dind service
+    DOCKER_TLS_CERTDIR: "" # Disable TLS verification for dind service, common for internal communication
+  before_script:
+    # Install Python and pip within the Alpine-based docker:latest image
+    - apk add --no-cache python3 py3-pip
+  script:
+    - pip install psycopg2-binary
+    - mkdir /protected_area
+    - touch /protected_area/config.json
+    - chmod 000 /protected_area
+    - cat /protected_area/config.json
+    - docker info # This command will now execute successfully
+    # Example of further Docker commands (assuming a Dockerfile exists):
+    # - docker build -t my-app:${CI_COMMIT_SHORT_SHA} .
+    # - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
+    # - docker push my-app:${CI_COMMIT_SHORT_SHA}

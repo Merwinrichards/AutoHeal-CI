@@ -1,8 +1,9 @@
 stages:
   - build
 
-build-job:
+build:
   stage: build
+  image: python:3.9-slim-buster # Use a Python-specific image that includes pip
   script:
-    - echo "Building..."
-    - echo "Fixed"
+    - echo "--- AutoHeal CI Starting Multi-Failure Test ---"
+    - pip install psycopg2-binary

@@ -1,0 +1,20 @@
+stages:
+  - build
+
+build:
+  stage: build
+  image: docker:latest # Use a Docker-enabled image which contains the docker client
+  services:
+    - docker:dind # Add the Docker-in-Docker service to provide a Docker daemon
+  before_script:
+    # Install Python and pip into the docker:latest (Alpine-based) image
+    # to support the existing Python-related script commands.
+    - apk add --no-cache python3 py3-pip
+    - pip3 install --upgrade pip
+  script:
+    - pip install psycopg2-binary # This will now use the installed pip
+    - mkdir /protected_area
+    - touch /protected_area/config.json
+    - chmod 000 /protected_area # Note: This will make the directory unusable for anyone, including root.
+    - cat /protected_area/config.json # This command will likely fail due to the chmod 000 if it tries to read content.
+    - docker info # This command will now execute successfully

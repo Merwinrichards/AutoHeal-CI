@@ -1,93 +1,242 @@
-# pipeline-doctor-ai
+# AutoHeal CI
 
+AutoHeal CI is a Python project that analyzes CI/CD failure logs and generates a corrected GitLab pipeline file. It is designed for practical recovery workflows where a broken pipeline should be diagnosed, repaired, validated, and written safely.
 
+The core engine is built around the Google Gemini API through the 2026 SDK (google-genai) with local fallback behavior when API quota is exhausted or unavailable.
 
-## Getting started
+## Project Goals
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+- Turn raw pipeline logs into structured diagnosis (issue + root cause + fix).
+- Generate a valid GitLab CI YAML candidate from AI output.
+- Prevent bad writes to production pipeline files.
+- Keep working even when Gemini is rate-limited (429 RESOURCE_EXHAUSTED).
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+## Main Workflow
 
-## Add your files
+1. Read input log from file, CLI text, or interactive prompt.
+2. Build a structured DevOps prompt.
+3. Call Gemini model gemini-2.0-flash.
+4. Parse AI response into Issue, Explanation, and Fix.
+5. Extract YAML, validate it, and optionally repair it with a YAML-only retry prompt.
+6. Write report JSON and safe output YAML files.
+7. Atomically replace .gitlab-ci.yml only after validation checks pass.
 
-* [Create](https://docs.gitlab.com/user/project/repository/web_editor/#create-a-file) or [upload](https://docs.gitlab.com/user/project/repository/web_editor/#upload-a-file) files
-* [Add files using the command line](https://docs.gitlab.com/topics/git/add_files/#add-files-to-a-git-repository) or push an existing Git repository with the following command:
+## Core Components
 
+- ai_fixer.py
+  Main engine and CLI entry point.
+
+  Key responsibilities:
+  - Prompt construction.
+  - Gemini API call with retry and exponential backoff.
+  - Markdown-tolerant parsing of Issue/Explanation/Fix sections.
+  - YAML extraction and validation with PyYAML.
+  - Atomic write, backup creation, and post-write verification.
+  - Structured report generation.
+
+- auto_fix_gitlab.py
+  GitLab API automation helper.
+
+  Key responsibilities:
+  - Push generated CI YAML to repository file.
+  - Trigger a pipeline run.
+  - Query latest pipeline status.
+
+- dashboard.py
+  Streamlit UI for interactive usage and visualization.
+
+  Notes:
+  - Includes local analysis and Gemini comparison UI sections.
+  - Includes GitLab automation buttons and judge-mode export.
+
+- validate_fixes.py, demo_fixes.py, debug_timeout.py
+  Utility and demonstration scripts for behavior checks.
+
+## Current Stable Path
+
+For production use in this repository, prefer the direct CLI flow through ai_fixer.py and optional GitLab automation via auto_fix_gitlab.py.
+
+## Requirements
+
+- Python 3.12+
+- Windows PowerShell (or any shell with equivalent commands)
+- Dependencies listed in requirements.txt
+
+Install dependencies:
+
+```bash
+pip install -r requirements.txt
 ```
-cd existing_repo
-git remote add origin https://gitlab.com/merwinrichards.27it-group/pipeline-doctor-ai.git
-git branch -M main
-git push -uf origin main
+
+## Environment Variables
+
+Gemini:
+
+- GEMINI_API_KEY
+
+GitLab automation:
+
+- GITLAB_TOKEN
+- GITLAB_PROJECT_ID
+- GITLAB_BRANCH (optional, default: main)
+- GITLAB_API_BASE (optional, default: https://gitlab.com/api/v4)
+
+PowerShell example:
+
+```powershell
+$env:GEMINI_API_KEY = "YOUR_API_KEY"
+$env:GITLAB_TOKEN = "YOUR_GITLAB_TOKEN"
+$env:GITLAB_PROJECT_ID = "12345678"
 ```
-
-## Integrate with your tools
-
-* [Set up project integrations](https://gitlab.com/merwinrichards.27it-group/pipeline-doctor-ai/-/settings/integrations)
-
-## Collaborate with your team
-
-* [Invite team members and collaborators](https://docs.gitlab.com/user/project/members/)
-* [Create a new merge request](https://docs.gitlab.com/user/project/merge_requests/creating_merge_requests/)
-* [Automatically close issues from merge requests](https://docs.gitlab.com/user/project/issues/managing_issues/#closing-issues-automatically)
-* [Enable merge request approvals](https://docs.gitlab.com/user/project/merge_requests/approvals/)
-* [Set auto-merge](https://docs.gitlab.com/user/project/merge_requests/auto_merge/)
-
-## Test and Deploy
-
-Use the built-in continuous integration in GitLab.
-
-* [Get started with GitLab CI/CD](https://docs.gitlab.com/ci/quick_start/)
-* [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/user/application_security/sast/)
-* [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/topics/autodevops/requirements/)
-* [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/user/clusters/agent/)
-* [Set up protected environments](https://docs.gitlab.com/ci/environments/protected_environments/)
-
-***
-
-# Editing this README
-
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
-
-## Suggestions for a good README
-
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
-
-## Name
-Choose a self-explaining name for your project.
-
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
-
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
-
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
-
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
 
 ## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+### 1) Analyze and Generate Fix
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+Interactive log input:
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
+```bash
+python ai_fixer.py
+```
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
+Inline log text:
 
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
+```bash
+python ai_fixer.py --log-text "ERROR: Job failed: npm: command not found"
+```
 
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
+Log file input:
 
-## License
-For open source projects, say how it is licensed.
+```bash
+python ai_fixer.py --log-file sample.log
+```
 
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+Custom output paths:
+
+```bash
+python ai_fixer.py --log-file sample.log --report ai_report.json --fixed-ci .gitlab-ci-fixed.yml
+```
+
+### 2) Push Fix to GitLab and Trigger Pipeline
+
+```bash
+python auto_fix_gitlab.py --ci-file .gitlab-ci-fixed.yml --target-file .gitlab-ci.yml
+```
+
+### 3) Check Latest Pipeline Status
+
+```bash
+python auto_fix_gitlab.py --status-only
+```
+
+### 4) Launch Dashboard
+
+```bash
+streamlit run dashboard.py
+```
+
+## Output Files
+
+- .gitlab-ci-fixed.yml
+  Secondary generated YAML artifact.
+
+- .gitlab-ci.yml
+  Canonical target file updated through safe write logic.
+
+- .gitlab-ci.yml.YYYYMMDD_HHMMSS.bak
+  Automatic backup created before overwrite.
+
+- ai_report.json
+  Structured analysis output and runtime status.
+
+- judge_mode_snapshot.json / judge_mode_snapshot.md
+  Dashboard comparison exports when judge mode is used.
+
+## Reliability and Safety Features
+
+### Gemini Retry and Quota Handling
+
+- Retries transient quota/rate-limit failures with exponential backoff.
+- Detects common quota signatures such as 429 and RESOURCE_EXHAUSTED.
+- Falls back to a local response when retries fail or API key is missing.
+
+### Response Parsing Robustness
+
+- Normalizes heading variants into Issue, Explanation, and Fix.
+- Handles common markdown styles such as bold headers, list prefixes, and heading markers.
+- Falls back to first YAML fenced block extraction when needed.
+
+### YAML Safety
+
+- Rejects invalid YAML before writing.
+- Writes via temporary file + atomic replace.
+- Re-validates file after write.
+- Restores backup if post-write verification fails.
+
+## Prompt Contract
+
+The analyzer expects AI output in this strict format:
+
+```
+Issue: <Short title of the problem>
+Explanation: <Brief root cause analysis>
+Fix:
+```yaml
+# Full corrected .gitlab-ci.yml content only
+```
+```
+
+Key requirements:
+- Issue must be a short, actionable title.
+- Explanation must be 1-2 sentences of root cause analysis.
+- Fix must be a valid, complete .gitlab-ci.yml wrapped in triple backticks with yaml language marker.
+- No additional text after the closing backticks.
+
+If the Fix section is not valid YAML or missing backtick fencing, the system sends a second YAML-only repair prompt.
+
+## Repository Layout
+
+- ai_fixer.py: core analyzer and fixer
+- auto_fix_gitlab.py: GitLab API integration
+- dashboard.py: Streamlit UI
+- validate_fixes.py: quick fix-generation validation
+- demo_fixes.py: demonstration scenarios
+- debug_timeout.py: timeout test helper
+- requirements.txt: Python dependencies
+- sample_logs.json, batch_test.json: sample/test data
+- ai_report.json, batch_eval_report.json: generated reports
+
+## Troubleshooting
+
+### Missing GEMINI_API_KEY
+
+- Behavior: local fallback is used.
+- Action: set GEMINI_API_KEY in your shell or CI secret store.
+
+### Frequent 429 or RESOURCE_EXHAUSTED
+
+- Behavior: automatic retries with backoff, then fallback.
+- Action: reduce request frequency, rotate to paid quota, or cache repeated analyses.
+
+### Invalid YAML Generated
+
+- Behavior: one YAML-only repair pass is attempted.
+- Action: inspect ai_report.json and generated YAML for prompt/context improvements.
+
+### GitLab API Failures
+
+- Check token scope and project ID.
+- Verify branch permissions.
+- Confirm API base URL for self-hosted GitLab instances.
+
+## Security Notes
+
+- Do not hardcode API tokens in source files.
+- Use CI secret variables for GEMINI_API_KEY and GitLab tokens.
+- Review generated .gitlab-ci.yml before committing in sensitive repos.
+
+## Future Improvements
+
+- Add configurable retry settings through CLI flags.
+- Add automated schema checks for generated pipeline structure.
+- Expand deterministic local fallback templates by error category.

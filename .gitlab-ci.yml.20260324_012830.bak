@@ -1,0 +1,23 @@
+stages:
+  - build
+
+build:
+  stage: build
+  image: docker:latest # Use a Docker image that contains the Docker client
+  services:
+    - docker:dind # Add the Docker-in-Docker service to provide a Docker daemon
+  variables:
+    DOCKER_HOST: tcp://docker:2375 # Connect to the dind service
+    DOCKER_TLS_CERTDIR: "" # Disable TLS for simpler connection to dind service
+  script:
+    # The 'docker:latest' image is typically based on Alpine Linux,
+    # so we need to install Python and pip manually for subsequent steps.
+    - apk add --no-cache python3 py3-pip
+    # Now, the original Python-related commands can run
+    - pip install psycopg2-binary
+    - mkdir /protected_area
+    - touch /protected_area/config.json
+    - chmod 000 /protected_area
+    - cat /protected_area/config.json
+    # The 'docker' command will now be available and functional
+    - docker info
